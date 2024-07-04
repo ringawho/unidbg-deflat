@@ -1,0 +1,19 @@
+使用步骤：
+
+#+begin_src sh
+  git clone https://github.com/zhkl0228/unidbg.git
+  cd unidbg
+  git clone https://github.com/ringawho/unidbg-deflat.git unidbg-android/src/test/java/com/wuaipojie
+  mkdir unidbg-android/src/test/java/com/wuaipojie/patch_ins/
+  git apply unidbg-android/src/test/java/com/wuaipojie/lib52pojie-unidbg.patch
+  mkdir unidbg-android/src/test/resources/wuaipojie/
+  cp <lib52pojie.so path> unidbg-android/src/test/resources/wuaipojie/
+#+end_src
+
+运行 ~unidbg-android/src/test/java/com/wuaipojie~ 目录下的 ~Test3.java~ 即可
+
+每次仅能反混淆一个方法，通过 ~test.setHookRegion(0x2a5c8, 0x2ab30);~ 设置反混淆方法区域，将输入内容中以 ~patch:~ 开头的行即是patch信息
+
+patch信息保存到文本文件中，保存目录为 ~unidbg-android/src/test/java/com/wuaipojie/patch_ins/~
+
+复制一份 ~so~ 文件，运行 ~patch_ins.py~ 即可（需要电脑安装rizin以及pip包rzpipe和keystone-engine）
