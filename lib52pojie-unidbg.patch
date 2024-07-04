@@ -1,0 +1,99 @@
+diff --git a/unidbg-android/pom.xml b/unidbg-android/pom.xml
+index 427335cc..59b95259 100644
+--- a/unidbg-android/pom.xml
++++ b/unidbg-android/pom.xml
+@@ -12,6 +12,11 @@
+     <artifactId>unidbg-android</artifactId>
+     <version>0.9.8-SNAPSHOT</version>
+     <dependencies>
++        <dependency>
++            <groupId>guru.nidi</groupId>
++            <artifactId>graphviz-java</artifactId>
++            <version>0.18.1</version>
++        </dependency>
+         <dependency>
+             <groupId>com.github.zhkl0228</groupId>
+             <artifactId>unidbg-api</artifactId>
+diff --git a/unidbg-android/src/main/java/com/github/unidbg/linux/ModuleSymbol.java b/unidbg-android/src/main/java/com/github/unidbg/linux/ModuleSymbol.java
+index 9947dedd..9c47f5d4 100644
+--- a/unidbg-android/src/main/java/com/github/unidbg/linux/ModuleSymbol.java
++++ b/unidbg-android/src/main/java/com/github/unidbg/linux/ModuleSymbol.java
+@@ -38,7 +38,7 @@ public class ModuleSymbol {
+             LinuxModule module = (LinuxModule) m;
+             Long symbolHook = module.hookMap.get(symbolName);
+             if (symbolHook != null) {
+-                return new ModuleSymbol(soName, WEAK_BASE, symbol, relocationAddr, module.name, symbolHook);
++                return new ModuleSymbol(soName, WEAK_BASE, symbol, relocationAddr, module.name, symbolHook + offset);
+             }
+ 
+             ElfSymbol elfSymbol = module.getELFSymbolByName(symbolName);
+@@ -47,10 +47,10 @@ public class ModuleSymbol {
+                     case ElfSymbol.BINDING_GLOBAL:
+                     case ElfSymbol.BINDING_WEAK:
+                         for (HookListener listener : listeners) {
+-                            long hook = listener.hook(svcMemory, module.name, symbolName, module.base + elfSymbol.value + offset);
++                            long hook = listener.hook(svcMemory, module.name, symbolName, module.base + elfSymbol.value);
+                             if (hook > 0) {
+                                 module.hookMap.put(symbolName, hook);
+-                                return new ModuleSymbol(soName, WEAK_BASE, elfSymbol, relocationAddr, module.name, hook);
++                                return new ModuleSymbol(soName, WEAK_BASE, elfSymbol, relocationAddr, module.name, hook + offset);
+                             }
+                         }
+                         return new ModuleSymbol(soName, module.base, elfSymbol, relocationAddr, module.name, offset);
+diff --git a/unidbg-android/src/main/java/com/github/unidbg/linux/file/MapsFileIO.java b/unidbg-android/src/main/java/com/github/unidbg/linux/file/MapsFileIO.java
+index 40ada4b8..100df353 100644
+--- a/unidbg-android/src/main/java/com/github/unidbg/linux/file/MapsFileIO.java
++++ b/unidbg-android/src/main/java/com/github/unidbg/linux/file/MapsFileIO.java
+@@ -70,6 +70,7 @@ public class MapsFileIO extends ByteArrayFileIO implements FileIO {
+         if (log.isDebugEnabled()) {
+             log.debug("\n" + builder);
+         }
++        builder.append("70a8381000-70a83c4000 r-xp 000c2000 fd:1e 112278 /data/app/com.wuaipojie.crackme2024/base.apk\n");
+ 
+         return builder.toString().getBytes();
+     }
+diff --git a/unidbg-android/src/test/resources/log4j.properties b/unidbg-android/src/test/resources/log4j.properties
+index bc6ec0c3..09aae77c 100644
+--- a/unidbg-android/src/test/resources/log4j.properties
++++ b/unidbg-android/src/test/resources/log4j.properties
+@@ -1,5 +1,7 @@
+-log4j.rootCategory=INFO, stdout
+-     
++#log4j.rootCategory=INFO, stdout
++log4j.rootCategory=INFO, null
++log4j.appender.null=org.apache.log4j.varia.NullAppender
++
+ log4j.appender.stdout=org.apache.log4j.ConsoleAppender
+ log4j.appender.stdout.layout=org.apache.log4j.PatternLayout
+ log4j.appender.stdout.layout.ConversionPattern=[%d{HH:mm:ss SSS}] %5p [%c] (%C{1}:%L) - %m%n
+diff --git a/unidbg-api/src/main/java/com/github/unidbg/arm/Cpsr.java b/unidbg-api/src/main/java/com/github/unidbg/arm/Cpsr.java
+index f420534c..d30c3068 100644
+--- a/unidbg-api/src/main/java/com/github/unidbg/arm/Cpsr.java
++++ b/unidbg-api/src/main/java/com/github/unidbg/arm/Cpsr.java
+@@ -62,7 +62,7 @@ public class Cpsr {
+         return hasBit(value, NEGATIVE_BIT);
+     }
+ 
+-    void setNegative(boolean on) {
++    public void setNegative(boolean on) {
+         if (on) {
+             setBit(NEGATIVE_BIT);
+         } else {
+@@ -76,7 +76,7 @@ public class Cpsr {
+         return hasBit(value, ZERO_BIT);
+     }
+ 
+-    void setZero(boolean on) {
++    public void setZero(boolean on) {
+         if (on) {
+             setBit(ZERO_BIT);
+         } else {
+@@ -107,7 +107,7 @@ public class Cpsr {
+         return hasBit(value, OVERFLOW_BIT);
+     }
+ 
+-    void setOverflow(boolean on) {
++    public void setOverflow(boolean on) {
+         if (on) {
+             setBit(OVERFLOW_BIT);
+         } else {
